@@ -62,4 +62,32 @@ The studio is designed for zero-setup local use.
 
 1.  **Clone the Repository:**
     ```bash
-    git clone
+    git clone [https://github.com/ShoanKJ/AI-Powered-Collaborative-Design-Studio](https://github.com/ShoanKJ/AI-Powered-Collaborative-Design-Studio)
+    ```
+2.  **Launch:** Navigate to the cloned folder and simply **double-click the `index.html` file** or open it directly in any modern web browser.
+
+### Development Notes
+* All code (HTML, CSS, JS) is currently contained within `index.html`.
+* The primary JavaScript logic resides within the `DrawingApp` class.
+
+---
+
+## 🚧 Future Development Roadmap (V2.0 Goals)
+
+The project title is a statement of future intent. V2.0 will focus on integrating external services and completing core features.
+
+### **Collaboration & Backend**
+
+* **Real-time Synchronization:** Integration with a lightweight database (e.g., Firebase or Supabase) or WebSockets to allow simultaneous editing by multiple users.
+* **User Authentication:** Basic login to assign ownership to layers and drawings.
+
+### **AI-Powered Features**
+
+* **Smart Drawing Cleanup:** Using TensorFlow.js or similar libraries to smooth hand-drawn shapes into perfect geometric forms (e.g., drawing a rough circle and having the AI perfect it).
+* **Connection Suggestions:** AI assistance for recognizing flow patterns and suggesting connectors (arrows) between objects.
+
+### **Feature Parity & Polish**
+
+* **File Export:** Full implementation of **PNG** and **SVG export** functionality.
+* **Object Resizing/Rotation:** Adding transformation controls for selected objects (text, rectangles, etc.).
+* **Style Persistence:** Saving tool properties (color, width, etc.) across sessions using LocalStorage.
