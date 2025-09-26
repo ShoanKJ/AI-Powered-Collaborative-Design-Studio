@@ -1,50 +1,65 @@
 # AI-Powered Collaborative Design Studio
 
-A single-file, web-based drawing and design application built using pure **HTML, CSS, and vanilla JavaScript**, serving as an interactive canvas for rapid prototyping, brainstorming, and collaborative design sessions.
+## 💡 Project Concept
 
-While the current version focuses on core drawing and canvas features, the architecture is designed for future integration of **AI-powered assistance** and **real-time collaboration**.
+The **AI-Powered Collaborative Design Studio** is a foundational, web-based drawing application built from the ground up to support limitless creative brainstorming. It currently serves as an ultra-lightweight, single-file prototype focused on a fully functional **infinite canvas** experience.
+
+The core mission of this project is to create an open-source platform that will eventually integrate advanced features, including **real-time multiplayer collaboration** and various **AI-driven design assistance tools**.
 
 ---
 
 ## 🔗 Live Application
 
-The "AI-Powered Collaborative Design Studio" is currently hosted and accessible via **GitHub Pages**:
+Experience the infinite canvas directly in your browser!
 
-**[Launch Studio](https://shoankj.github.io/AI-Powered-Collaborative-Design-Studio)**
+**[Launch AI-Powered Collaborative Design Studio](https://shoankj.github.io/AI-Powered-Collaborative-Design-Studio)**
 
 ---
 
-## ✨ Core Features
+## ✨ Core Feature Breakdown
 
-This application implements a fully functional infinite canvas built on a simple object model, enabling non-destructive editing and manipulation of drawn elements.
+The current version of the studio is implemented entirely in vanilla JavaScript and focuses on robust, low-level canvas manipulation to create a non-destructive object model.
 
-* **Infinite Canvas:** Provides a virtually limitless drawing space with seamless panning and zooming.
-* **Essential Toolkit:** Includes core design tools: **Brush, Eraser, Line, Rectangle, Circle, Text,** and **Arrow**.
-* **Object Manipulation:** Use the **Select (V)** tool to move, reposition, and manipulate existing drawing objects.
-* **View Controls:** Navigate effortlessly using **Pan (Spacebar)** and **Zoom (Mouse Wheel)**.
-* **History Management:** Robust **Undo/Redo (Ctrl/Cmd + Z/Y)** functionality for all design changes.
-* **Layering System:** Basic layer management for organizing complex designs.
-* **Snapping Grid:** Toggle a grid overlay that assists with precise object placement.
+### **The Infinite Canvas System**
+
+* **Viewport Independence:** The canvas is not limited by the screen size. All drawing operations are mapped to a virtual, unbounded **World Coordinate System**.
+* **Seamless Navigation:** Achieves the illusion of infinite space through intelligent application of **CSS Transforms** (`translate` and `scale`) to the canvas element itself, ensuring smooth performance even at extreme zoom levels.
+* **Pan & Zoom:** Navigate the entire space effortlessly using the mouse wheel (Zoom) or the dedicated **Pan (Move) tool** (or holding the **Spacebar**).
+
+### **Drawing & Object Model**
+
+* **Vector-Like Editing:** Unlike traditional pixel-based drawing, every shape (rectangles, lines, text, and even brush strokes) is stored as a distinct **JavaScript Object** with properties (coordinates, color, size).
+* **Non-Destructive Manipulation:** Use the **Select (V)** tool to **move or reposition** any existing object anywhere on the canvas without altering the objects underneath it.
+* **Robust History:** Implements a full state-based history system, enabling limitless **Undo (Ctrl/Cmd + Z)** and **Redo (Ctrl/Cmd + Y)** for all drawing and object manipulation actions.
+
+### **Tool Set & Utility**
+
+| Tool | Shortcut | Description |
+| :--- | :--- | :--- |
+| **Brush** | `B` | Freehand drawing with adjustable stroke width and color. |
+| **Eraser** | `E` | Non-destructive tool that uses `destination-out` composite operation to erase content. |
+| **Shapes** | `L, R, C` | Tools for drawing perfect Lines, Rectangles, and Circles. |
+| **Text** | `T` | Place interactive text input fields on the canvas (stored as objects). |
+| **Layers** | N/A | Basic organizational structure to manage groups of objects. |
+| **Snapping Grid** | N/A | Toggle a visible grid that snaps all new drawing points for precise alignment. |
+
+---
+
+## 🛠️ Technology Stack
+
+This project is intentionally built using the absolute minimum set of technologies to maximize compatibility, performance, and simplicity.
+
+* **HTML5:** Structure and Canvas Element.
+* **CSS3:** Styling and crucial performance-boosting canvas transformations.
+* **Vanilla JavaScript (ES6+):** All application logic, state management, and custom `DrawingApp` class.
+* **Canvas API:** Used for high-performance rendering of shapes and paths.
 
 ---
 
 ## 🚀 Getting Started (Local Development)
 
-Since this project is a single-file application, it requires no server or build steps for local use.
+The studio is designed for zero-setup local use.
 
 1.  **Clone the Repository:**
     ```bash
-    git clone [https://github.com/ShoanKJ/AI-Powered-Collaborative-Design-Studio](https://github.com/ShoanKJ/AI-Powered-Collaborative-Design-Studio)
-    ```
-2.  **Launch:** Simply **drag the `index.html` file into any modern web browser** (Chrome, Firefox, Safari, etc.) or double-click the file to open it.
-
----
-
-## 🚧 Future Development Roadmap
-
-The current version lays the foundation for advanced features. Planned additions include:
-
-* **AI Integration:** Implement logic for features like "smart cleanup," "auto-suggested connections," or "design pattern recognition."
-* **Real-time Collaboration:** Integrate a backend service (e.g., Firebase, WebSocket) to enable multiple users to interact on the same canvas concurrently.
-* **Export Functionality:** Full implementation of **PNG** and **SVG export** (currently placeholders).
-* **Advanced Editing:** Tools for manipulating text content, resizing shapes, and advanced object transformation.
+    git clone
