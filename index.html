@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Collaborative Design Studio</title>
+    <style>
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            overflow: hidden;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            user-select: none;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Toolbars and Panels */
+        .top-toolbar {
+            background: #2a2a2a;
+            border-bottom: 1px solid #3a3a3a;
+            padding: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .toolbar-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px;
+            border-right: 1px solid #3a3a3a;
+        }
+
+        .toolbar-section:last-child {
+            border-right: none;
+        }
+
+        .footer-toolbar {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            gap: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 999;
+        }
+
+        /* Buttons */
+        .btn {
+            background: #3a3a3a;
+            border: none;
+            color: #e0e0e0;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            min-width: 36px;
+            height: 36px;
+        }
+
+        .btn:hover {
+            background: #4a4a4a;
+        }
+
+        .btn.active {
+            background: #5865f2;
+            color: white;
+        }
+
+        .btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Canvas Area */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #0d0d0d;
+        }
+
+        #canvas {
+            cursor: crosshair;
+            position: absolute;
+            background: white;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transform-origin: 0 0;
+            transition: transform 0.0s;
+        }
+
+        /* Property Panel */
+        .property-panel-wrapper {
+            position: absolute;
+            right: 0;
+            top: 52px;
+            height: calc(100% - 52px);
+            z-index: 998;
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(0);
+        }
+
+        .property-panel-wrapper.hidden {
+            transform: translateX(250px);
+        }
+
+        .property-panel {
+            background: #2a2a2a;
+            border-radius: 8px 0 0 8px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            min-width: 230px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .property-toggle-btn {
+            position: absolute;
+            left: -36px;
+            top: 16px;
+            background: #2a2a2a;
+            border-radius: 8px 0 0 8px;
+            padding: 8px;
+            height: 36px;
+            width: 36px;
+        }
+
+        .property-group {
+            margin-bottom: 16px;
+        }
+
+        .property-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #999;
+        }
+
+        .color-presets-row {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .color-preset {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border 0.2s;
+        }
+
+        /* Layers Panel */
+        .layers-panel {
+            position: absolute;
+            left: 16px;
+            top: 60px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 997;
+            min-width: 180px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .layers-panel.show {
+            display: block;
+        }
+
+        .layer-item {
+            padding: 8px;
+            background: #3a3a3a;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            color: #e0e0e0;
+        }
+        
+        /* Zoom Controls */
+        .zoom-controls {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 999;
+        }
+        
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="top-toolbar">
+            <div class="toolbar-section">
+                <button class="btn" id="newBtn" title="New">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v4h5v12H6z"/></svg>
+                </button>
+                <button class="btn" id="saveBtn" title="Save PNG">
+                    <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                </button>
+                <button class="btn" id="exportSvgBtn" title="Export SVG">
+                    <svg viewBox="0 0 24 24"><path d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm1 14h-2v-4H8V8h8v4h-3v4z"/></svg>
+                </button>
+            </div>
+            
+            <div class="toolbar-section">
+                <button class="btn" id="undoBtn" title="Undo" disabled>
+                    <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.61-3.61c1.39-1.16 3.16-1.89 5.61-1.89 3.86 0 7 3.14 7 7s-3.14 7-7 7c-1.42 0-2.75-.43-3.92-1.17l-1.47 1.47C8.75 20.39 10.38 21 12.5 21c5.52 0 10-4.48 10-10S18.02 4 12.5 4z"/></svg>
+                </button>
+                <button class="btn" id="redoBtn" title="Redo" disabled>
+                    <svg viewBox="0 0 24 24"><path d="M18.42 12.67C17.25 10.39 14.88 9 12.5 9c-3.86 0-7 3.14-7 7s3.14 7 7 7c1.42 0 2.75-.43 3.92-1.17l-1.47-1.47C13.25 20.01 11.62 21 9.5 21c-4.42 0-8-3.58-8-8s3.58-8 8-8c2.65 0 5.05.99 6.9 2.6L22 7V2h-9l3.61 3.61C17.09 6.78 17 6.83 17 6.88z"/></svg>
+                </button>
+            </div>
+
+            <div class="toolbar-section">
+                <button class="btn" id="gridToggleBtn" title="Toggle Grid">
+                    <svg viewBox="0 0 24 24"><path d="M10 4v.15L11.85 6H20c1.1 0 2 .9 2 2v10c0 .34-.09.66-.23.94L20 18c0 .03 0 .06 0 .09V8h-8V4zM4 6h3V4H4c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-3.17l-2-2V20H4V6zm7 8l-2 2v-4h2z"/></svg>
+                </button>
+                <button class="btn" id="layersBtn" title="Layers">
+                    <svg viewBox="0 0 24 24"><path d="M12 2l-6.5 6.64L12 15.28l6.5-6.64L12 2zm6.5 8.76L12 17.4l-6.5-6.64L12 24l6.5-13.24z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            <canvas class="grid-overlay" id="gridCanvas"></canvas>
+            <input type="text" class="text-input" id="textInput" style="position: absolute; display: none; z-index: 1001; padding: 4px; border: 1px solid #5865f2; background: #2a2a2a; color: #e0e0e0; border-radius: 4px;">
+            
+            <div class="footer-toolbar">
+                <button class="btn" data-tool="select" title="Select (V)">
+                    <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm0 8h2v-2H3v2zm0-4h2v-2H3v2zm0-4h2V7H3v2zm0 8h2v-2H3v2zm0-4h2v-2H3v2zm0-4h2V7H3v2zm4 8h2v-2H7v2zm0-4h2v-2H7v2zm0-4h2V7H7v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V7h-2v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V7h-2v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V7h-2v2z"/></svg>
+                </button>
+                <button class="btn active" data-tool="brush" title="Brush (B)">
+                    <svg viewBox="0 0 24 24"><path d="M17.75 3c-.1 0-.19.01-.29.02L16 2.5C14.73 2.5 13.52 3 12.5 4.02l-7.25 7.25c-.24.24-.24.64 0 .88L11.5 17c.24.24.64.24.88 0l7.25-7.25c1.02-1.02 1.5-2.23 1.5-3.5S18.77 4.02 17.75 3zm-2.79 3.99L5.5 16.44l1.41 1.41 9.47-9.47-1.42-1.41z"/></svg>
+                </button>
+                <button class="btn" data-tool="eraser" title="Eraser (E)">
+                    <svg viewBox="0 0 24 24"><path d="M17.18 10.22L12.5 5.5l-4.25 4.25-1.41-1.41L11.75 3 21 12.25l-1.41 1.41-2.41-2.41zM11.75 19H3v-2h8.75L20 7.75l1.41 1.41L11.75 19z"/></svg>
+                </button>
+                <button class="btn" data-tool="line" title="Line (L)">
+                    <svg viewBox="0 0 24 24"><path d="M22 17h-2.52l-5.6-5.62 1.09-1.09 5.6 5.62L17 19.48V22h5v-5zm-5 0V7h2v10h-2zm-6-1h2V7h-2v9zM6 7v10h2V7H6zM2 7v10h2V7H2z"/></svg>
+                </button>
+                <button class="btn" data-tool="rectangle" title="Rectangle (R)">
+                    <svg viewBox="0 0 24 24"><path d="M4 6v12h16V6H4zm14 2v8H6V8h12z"/></svg>
+                </button>
+                <button class="btn" data-tool="circle" title="Circle (C)">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                </button>
+                <button class="btn" data-tool="polygon" title="Polygon (P)">
+                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+                </button>
+                <button class="btn" data-tool="arrow" title="Arrow (A)">
+                    <svg viewBox="0 0 24 24"><path d="M22 12l-4-4v3H3v2h15v3l4-4z"/></svg>
+                </button>
+                <button class="btn" data-tool="text" title="Text (T)">
+                    <svg viewBox="0 0 24 24"><path d="M5 4v3h5.5v12h3V7H19V4z"/></svg>
+                </button>
+                <button class="btn" data-tool="move" title="Pan (Space)">
+                    <svg viewBox="0 0 24 24"><path d="M13 14h-2v-3h2v3zm2-5h-2V6h2v3zM5 15h2v-2H5v2zm4 0h2v-2H9v2zm4 0h2v-2h-2v2zm-8-4h2v-2H5v2zM9 9h2V7H9v2zm4 0h2V7h-2v2zM5 5h14v14H5V5zm2 2v2h2v-2H7zm4 0v2h2V7h-2z"/></svg>
+                </button>
+            </div>
+
+            <div class="property-panel-wrapper" id="propertyPanelWrapper">
+                <button class="btn property-toggle-btn" id="propertyToggleBtn" title="Toggle Properties">
+                    <svg viewBox="0 0 24 24"><path d="M19.4 12.98c.04-.32.06-.64.06-.98s-.02-.66-.06-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65c-.03-.27-.24-.48-.51-.48h-4c-.28 0-.49.21-.52.48l-.38 2.65c-.61.25-1.17.58-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.08.49.12.64l2.11 1.65c-.04.32-.06.64-.06.98s.02.66.06.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.31.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.27.24.48.51.48h4c.28 0 .49-.21.52-.48l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.22.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
+                </button>
+                <div class="property-panel">
+                    <div class="property-group">
+                        <label>Stroke Color</label>
+                        <input type="color" id="strokeColor" value="#000000" style="width: 100%; height: 32px;">
+                        <div class="color-presets-row" style="margin-top: 8px;">
+                            <div class="color-preset" style="background: #000000" data-color="#000000"></div>
+                            <div class="color-preset" style="background: #ffffff; border: 1px solid #3a3a3a;" data-color="#ffffff"></div>
+                            <div class="color-preset" style="background: #ff0000" data-color="#ff0000"></div>
+                            <div class="color-preset" style="background: #00ff00" data-color="#00ff00"></div>
+                            <div class="color-preset" style="background: #0000ff" data-color="#0000ff"></div>
+                            <div class="color-preset" style="background: #ffff00" data-color="#ffff00"></div>
+                            <div class="color-preset" style="background: #ff00ff" data-color="#ff00ff"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="property-group">
+                        <label>Fill Color</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="color" id="fillColor" value="#ffffff" style="flex: 1; height: 32px;">
+                            <button class="btn" id="noFillBtn" style="width: auto; padding: 4px 8px; height: 32px; font-size: 12px; margin-left: auto;">
+                                No Fill
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label>Stroke Width</label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="range" id="strokeWidth" min="1" max="50" value="2" style="flex: 1;">
+                            <span style="min-width: 30px; text-align: right; font-size: 12px;" id="strokeWidthValue">2</span>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label>Opacity</label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="range" id="opacity" min="0" max="100" value="100" style="flex: 1;">
+                            <span style="min-width: 30px; text-align: right; font-size: 12px;" id="opacityValue">100%</span>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label>Style</label>
+                        <select id="styleSelect" style="width: 100%; padding: 6px; background: #3a3a3a; color: #e0e0e0; border: none; border-radius: 4px;">
+                            <option value="normal">Normal</option>
+                            <option value="rough">Hand-drawn</option>
+                            <option value="dashed">Dashed</option>
+                            <option value="dotted">Dotted</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="layers-panel" id="layersPanel">
+                 <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <label style="font-size: 12px; text-transform: uppercase; color: #999;">Layers</label>
+                    <button class="btn" id="addLayerBtn" style="width: 24px; height: 24px; padding: 0;">
+                        +
+                    </button>
+                </div>
+                <div id="layersList"></div>
+            </div>
+
+            <div class="zoom-controls">
+                <button class="btn" id="zoomInBtn" title="Zoom In">
+                    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M12 10H7v1h5v-1z"/><path d="M10 7H9v5h1V7z"/></svg>
+                </button>
+                <button class="btn" id="zoomOutBtn" title="Zoom Out">
+                    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M12 10H7v1h5v-1z"/></svg>
+                </button>
+                <button class="btn" id="resetZoomBtn" title="Reset Zoom">
+                    <span style="font-size: 10px;">1:1</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class DrawingApp {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.gridCanvas = document.getElementById('gridCanvas');
+                this.gridCtx = this.gridCanvas.getContext('2d');
+                
+                this.currentTool = 'brush';
+                this.isDrawing = false;
+                this.isPanning = false;
+                this.isMovingObject = false;
+                this.startX = 0;
+                this.startY = 0;
+                this.lastPanX = 0;
+                this.lastPanY = 0;
+                this.objectOffset = { x: 0, y: 0 };
+                this.strokeColor = '#000000';
+                this.fillColor = '#ffffff';
+                this.strokeWidth = 2;
+                this.opacity = 1;
+                this.style = 'normal';
+                this.hasFill = true;
+                this.zoom = 1;
+                this.panX = 0;
+                this.panY = 0;
+                this.showGrid = false;
+                this.GRID_SIZE = 50;
+                this.history = [];
+                this.historyStep = -1;
+                this.layers = [];
+                this.currentLayerIndex = 0;
+                this.selectedObjects = [];
+                this.textInput = document.getElementById('textInput');
+                this.currentTextObject = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.setupToolbar();
+                this.setupProperties();
+                this.setupKeyboardShortcuts();
+                this.addLayer('Layer 1');
+                this.saveState();
+                this.redraw();
+            }
+            
+            // --- Setup & Utilities ---
+            
+            setupCanvas() {
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+            
+            resizeCanvas() {
+                const container = document.querySelector('.canvas-container');
+                this.canvas.width = container.clientWidth;
+                this.canvas.height = container.clientHeight;
+                this.gridCanvas.width = container.clientWidth;
+                this.gridCanvas.height = container.clientHeight;
+                
+                // Set up a large drawing surface (world coordinates)
+                const drawingWidth = 4000;
+                const drawingHeight = 3000;
+                this.ctx.canvas.width = drawingWidth;
+                this.ctx.canvas.height = drawingHeight;
+
+                // Center the large canvas in the viewport
+                this.panX = (container.clientWidth / 2) - (drawingWidth / 2);
+                this.panY = (container.clientHeight / 2) - (drawingHeight / 2);
+                
+                this.applyCanvasTransform();
+                this.redraw();
+            }
+
+            applyCanvasTransform() {
+                const transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+                this.canvas.style.transform = transform;
+                this.gridCanvas.style.transform = transform;
+            }
+            
+            getCanvasCoords(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                // Correct calculation: use the base canvas offsets, not the screen offsets
+                let x = (e.clientX - rect.left) / this.zoom - this.panX / this.zoom;
+                let y = (e.clientY - rect.top) / this.zoom - this.panY / this.zoom;
+                
+                if (this.showGrid && !['move', 'select'].includes(this.currentTool)) {
+                    const snap = this.GRID_SIZE;
+                    x = Math.round(x / snap) * snap;
+                    y = Math.round(y / snap) * snap;
+                }
+                
+                return { x, y };
+            }
+            
+            updateCursor() {
+                let cursor = 'crosshair';
+                if (this.currentTool === 'select') cursor = this.isMovingObject ? 'grabbing' : 'default';
+                if (this.currentTool === 'move') cursor = this.isPanning ? 'grabbing' : 'grab';
+                this.canvas.style.cursor = cursor;
+            }
+
+            setupEventListeners() {
+                this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+                this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+                this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+                this.canvas.addEventListener('mouseout', () => { if (!this.isPanning && !this.isMovingObject) this.stopDrawing(); });
+                
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY });
+                    this.canvas.dispatchEvent(mouseEvent);
+                });
+                
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY });
+                    this.canvas.dispatchEvent(mouseEvent);
+                });
+                
+                this.canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    const mouseEvent = new MouseEvent('mouseup', {});
+                    this.canvas.dispatchEvent(mouseEvent);
+                });
+                
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                    this.zoomAtPoint(zoomFactor, e.clientX, e.clientY);
+                });
+
+                this.textInput.addEventListener('blur', () => this.finishTextEdit());
+                this.textInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        this.finishTextEdit();
+                    }
+                });
+            }
+
+            setupToolbar() {
+                document.querySelectorAll('.footer-toolbar .btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const tool = button.getAttribute('data-tool');
+                        this.setTool(tool);
+                        document.querySelectorAll('.footer-toolbar .btn').forEach(b => b.classList.remove('active'));
+                        button.classList.add('active');
+                    });
+                });
+
+                document.getElementById('undoBtn').addEventListener('click', () => this.undo());
+                document.getElementById('redoBtn').addEventListener('click', () => this.redo());
+                document.getElementById('saveBtn').addEventListener('click', () => this.saveToPNG());
+                document.getElementById('exportSvgBtn').addEventListener('click', () => this.saveToSVG());
+                document.getElementById('newBtn').addEventListener('click', () => this.clearCanvas());
+                document.getElementById('gridToggleBtn').addEventListener('click', () => this.toggleGrid());
+                document.getElementById('layersBtn').addEventListener('click', () => this.toggleLayersPanel());
+
+                document.getElementById('zoomInBtn').addEventListener('click', () => this.setZoom(this.zoom * 1.1));
+                document.getElementById('zoomOutBtn').addEventListener('click', () => this.setZoom(this.zoom * 0.9));
+                document.getElementById('resetZoomBtn').addEventListener('click', () => this.setZoom(1));
+
+                document.getElementById('addLayerBtn').addEventListener('click', () => this.addLayer());
+            }
+            
+            setupProperties() {
+                const strokeColorInput = document.getElementById('strokeColor');
+                strokeColorInput.addEventListener('input', (e) => { this.strokeColor = e.target.value; });
+
+                const fillColorInput = document.getElementById('fillColor');
+                fillColorInput.addEventListener('input', (e) => { this.fillColor = e.target.value; this.hasFill = true; });
+
+                document.querySelectorAll('.color-preset').forEach(preset => {
+                    preset.addEventListener('click', (e) => {
+                        const color = e.target.getAttribute('data-color');
+                        this.strokeColor = color;
+                        strokeColorInput.value = color;
+                    });
+                });
+
+                document.getElementById('noFillBtn').addEventListener('click', () => { this.hasFill = false; });
+
+                const widthSlider = document.getElementById('strokeWidth');
+                const widthValue = document.getElementById('strokeWidthValue');
+                widthSlider.value = this.strokeWidth;
+                widthValue.textContent = this.strokeWidth;
+                widthSlider.addEventListener('input', (e) => {
+                    this.strokeWidth = parseInt(e.target.value);
+                    widthValue.textContent = this.strokeWidth;
+                });
+
+                const opacitySlider = document.getElementById('opacity');
+                const opacityValue = document.getElementById('opacityValue');
+                opacitySlider.value = this.opacity * 100;
+                opacityValue.textContent = `${this.opacity * 100}%`;
+                opacitySlider.addEventListener('input', (e) => {
+                    this.opacity = parseInt(e.target.value) / 100;
+                    opacityValue.textContent = `${e.target.value}%`;
+                });
+
+                document.getElementById('styleSelect').addEventListener('change', (e) => {
+                    this.style = e.target.value;
+                });
+                
+                document.getElementById('propertyToggleBtn').addEventListener('click', () => {
+                    document.getElementById('propertyPanelWrapper').classList.toggle('hidden');
+                });
+            }
+
+            setTool(tool) {
+                this.currentTool = tool;
+                this.isPanning = false;
+                this.isMovingObject = false;
+                this.currentObject = null;
+                this.updateCursor();
+                this.textInput.style.display = 'none';
+                
+                // Ensure the Pan tool handler is explicitly set
+                if (tool === 'move') {
+                    this.canvas.style.cursor = 'grab';
+                }
+            }
+            
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Delete' || e.key === 'Backspace') {
+                        e.preventDefault();
+                        this.deleteSelected();
+                    }
+
+                    if (e.ctrlKey || e.metaKey) {
+                        if (e.key === 'z') { e.preventDefault(); this.undo(); }
+                        else if (e.key === 'y' || (e.shiftKey && e.key === 'Z')) { e.preventDefault(); this.redo(); }
+                        else if (e.key === 's') { e.preventDefault(); this.saveToPNG(); }
+                    } else {
+                        const toolMap = {
+                            'b': 'brush', 'e': 'eraser', 'l': 'line', 'r': 'rectangle', 
+                            'c': 'circle', 'v': 'select', 't': 'text', ' ': 'move',
+                            'p': 'polygon', 'a': 'arrow'
+                        };
+                        const tool = toolMap[e.key.toLowerCase()];
+                        if (tool) {
+                            e.preventDefault();
+                            document.querySelector(`.footer-toolbar .btn[data-tool="${tool}"]`)?.click();
+                        }
+                    }
+                });
+            }
+
+            // --- History & Layers ---
+
+            saveState() {
+                const serializableLayers = this.layers.map(layer => ({
+                    name: layer.name,
+                    isVisible: layer.isVisible,
+                    objects: layer.objects.map(obj => ({...obj}))
+                }));
+
+                if (this.historyStep < this.history.length - 1) {
+                    this.history = this.history.slice(0, this.historyStep + 1);
+                }
+                
+                this.history.push(JSON.stringify(serializableLayers));
+                this.historyStep = this.history.length - 1;
+
+                document.getElementById('undoBtn').disabled = this.historyStep <= 0;
+                document.getElementById('redoBtn').disabled = this.historyStep >= this.history.length - 1;
+            }
+
+            loadState(step) {
+                if (step >= 0 && step < this.history.length) {
+                    const loadedLayers = JSON.parse(this.history[step]);
+                    this.layers = loadedLayers;
+                    this.currentLayerIndex = Math.min(this.currentLayerIndex, this.layers.length - 1);
+                    this.historyStep = step;
+                    this.selectedObjects = [];
+                    this.redraw();
+                    this.updateLayersPanel();
+                    
+                    document.getElementById('undoBtn').disabled = this.historyStep <= 0;
+                    document.getElementById('redoBtn').disabled = this.historyStep >= this.history.length - 1;
+                }
+            }
+
+            undo() { this.loadState(this.historyStep - 1); }
+            redo() { this.loadState(this.historyStep + 1); }
+            
+            clearCanvas() {
+                if (confirm("Are you sure you want to clear the entire canvas?")) {
+                    this.layers = [];
+                    this.addLayer('Layer 1');
+                    this.history = [];
+                    this.historyStep = -1;
+                    this.saveState();
+                    this.redraw();
+                }
+            }
+            
+            getCurrentLayer() {
+                return this.layers[this.currentLayerIndex];
+            }
+
+            addLayer(name = `Layer ${this.layers.length + 1}`) {
+                const newLayer = { name: name, objects: [], isVisible: true };
+                this.layers.push(newLayer);
+                this.currentLayerIndex = this.layers.length - 1;
+                this.updateLayersPanel();
+                this.saveState();
+                this.redraw();
+            }
+
+            toggleLayersPanel() {
+                document.getElementById('layersPanel').classList.toggle('show');
+                this.updateLayersPanel();
+            }
+
+            updateLayersPanel() {
+                const list = document.getElementById('layersList');
+                list.innerHTML = '';
+                this.layers.slice().reverse().forEach((layer, originalIndex) => {
+                    const index = this.layers.length - 1 - originalIndex;
+                    const layerDiv = document.createElement('div');
+                    layerDiv.className = 'layer-item' + (this.currentLayerIndex === index ? ' active' : '');
+                    layerDiv.dataset.index = index;
+                    layerDiv.textContent = layer.name;
+                    layerDiv.onclick = () => { this.currentLayerIndex = index; this.updateLayersPanel(); };
+                    list.appendChild(layerDiv);
+                });
+            }
+
+            // --- Core Drawing & Interaction Logic ---
+            
+            hitTest(x, y, obj) {
+                // Simplified hit test for bounding boxes
+                if (obj.x !== undefined && obj.y !== undefined && obj.w !== undefined && obj.h !== undefined) {
+                    return x >= obj.x && x <= (obj.x + obj.w) && y >= obj.y && y <= (obj.y + obj.h);
+                } 
+                if (obj.tool === 'circle' && obj.r) {
+                    const centerX = obj.x + obj.w / 2;
+                    const centerY = obj.y + obj.h / 2;
+                    const dx = x - centerX;
+                    const dy = y - centerY;
+                    return (dx * dx + dy * dy) <= (obj.r * obj.r);
+                }
+                return false;
+            }
+
+            startDrawing(e) {
+                const { x, y } = this.getCanvasCoords(e);
+                this.startX = x;
+                this.startY = y;
+                this.isDrawing = true;
+                this.textInput.style.display = 'none';
+                
+                if (this.currentTool === 'move') {
+                    this.isPanning = true;
+                    this.lastPanX = e.clientX;
+                    this.lastPanY = e.clientY;
+                    this.updateCursor();
+                    return;
+                }
+
+                if (this.currentTool === 'select') {
+                    let hitObject = null;
+                    // Check layers in reverse order (topmost first)
+                    for (let i = this.layers.length - 1; i >= 0; i--) {
+                        const layer = this.layers[i];
+                        if (!layer.isVisible) continue;
+                        for (let j = layer.objects.length - 1; j >= 0; j--) {
+                            const obj = layer.objects[j];
+                            if (this.hitTest(x, y, obj)) {
+                                hitObject = obj;
+                                break;
+                            }
+                        }
+                        if (hitObject) break;
+                    }
+                    
+                    if (hitObject) {
+                        this.selectedObjects = [hitObject];
+                        this.isMovingObject = true;
+                        this.objectOffset.x = x - hitObject.x;
+                        this.objectOffset.y = y - hitObject.y;
+                        this.updateCursor();
+                    } else {
+                        this.selectedObjects = [];
+                    }
+                    this.redraw();
+                    return;
+                }
+                
+                if (this.currentTool === 'text') {
+                    this.showTextInput(this.startX, this.startY);
+                    this.isDrawing = false;
+                    return;
+                }
+
+                // Normal drawing start
+                this.selectedObjects = [];
+                const currentProperties = this.getCurrentProperties();
+                
+                if (['brush', 'eraser'].includes(this.currentTool)) {
+                    this.currentObject = {
+                        tool: this.currentTool,
+                        path: [{ x: this.startX, y: this.startY }],
+                        properties: currentProperties,
+                    };
+                } else if (['line', 'rectangle', 'circle', 'arrow', 'polygon'].includes(this.currentTool)) {
+                    // Initialize object with a bounding box (x,y,w,h) for hit test and transformation
+                    this.currentObject = {
+                        tool: this.currentTool,
+                        x: this.startX, y: this.startY, w: 0, h: 0, r: 0, // Bounding/Shape data
+                        x1: this.startX, y1: this.startY, x2: this.startX, y2: this.startY, // Line/Arrow data
+                        properties: currentProperties,
+                    };
+                }
+                
+                if (this.currentObject) {
+                    this.getCurrentLayer().objects.push(this.currentObject);
+                }
+                this.redraw();
+            }
+            
+            draw(e) {
+                const { x, y } = this.getCanvasCoords(e);
+                
+                if (this.isPanning) {
+                    this.pan(e.clientX, e.clientY);
+                    this.lastPanX = e.clientX;
+                    this.lastPanY = e.clientY;
+                    return;
+                }
+                
+                if (this.isMovingObject) {
+                    const obj = this.selectedObjects[0];
+                    if (obj) {
+                        const dx = x - (obj.x + this.objectOffset.x);
+                        const dy = y - (obj.y + this.objectOffset.y);
+                        
+                        // Update bounding box (x, y)
+                        obj.x = x - this.objectOffset.x;
+                        obj.y = y - this.objectOffset.y;
+                        
+                        // Update line/arrow coordinates (x1, y1, x2, y2)
+                        if (obj.x1 !== undefined) {
+                            obj.x1 += dx;
+                            obj.y1 += dy;
+                            obj.x2 += dx;
+                            obj.y2 += dy;
+                        }
+                        
+                        // Path objects (brush/eraser) need complex logic (skipped for now, but should work with just bounding box move)
+                    }
+                    this.redraw();
+                    return;
+                }
+
+                if (!this.isDrawing || !this.currentObject) return;
+                
+                switch(this.currentTool) {
+                    case 'brush':
+                    case 'eraser':
+                        this.currentObject.path.push({ x, y });
+                        break;
+                    case 'line':
+                    case 'arrow':
+                        this.currentObject.x2 = x;
+                        this.currentObject.y2 = y;
+                        break;
+                    case 'rectangle':
+                    case 'polygon':
+                        this.currentObject.x = Math.min(this.startX, x);
+                        this.currentObject.y = Math.min(this.startY, y);
+                        this.currentObject.w = Math.abs(x - this.startX);
+                        this.currentObject.h = Math.abs(y - this.startY);
+                        break;
+                    case 'circle':
+                        const dx = x - this.startX;
+                        const dy = y - this.startY;
+                        this.currentObject.r = Math.sqrt(dx * dx + dy * dy);
+                        // Update bounding box around the original start point (center)
+                        this.currentObject.x = this.startX - this.currentObject.r;
+                        this.currentObject.y = this.startY - this.currentObject.r;
+                        this.currentObject.w = this.currentObject.r * 2;
+                        this.currentObject.h = this.currentObject.r * 2;
+                        break;
+                }
+                
+                this.redraw();
+            }
+            
+            stopDrawing() {
+                if (this.isPanning) {
+                    this.isPanning = false;
+                    this.updateCursor();
+                }
+                
+                if (this.isMovingObject) {
+                    this.isMovingObject = false;
+                    this.updateCursor();
+                    this.saveState();
+                }
+                
+                if (this.isDrawing) {
+                    this.isDrawing = false;
+                    
+                    const layer = this.getCurrentLayer();
+                    if (this.currentObject) {
+                        let isSmallShape = false;
+                        if (['rectangle', 'polygon', 'circle'].includes(this.currentObject.tool)) {
+                             // Check if shape is too small to be intentional
+                             isSmallShape = this.currentObject.w < 5 && this.currentObject.h < 5;
+                        } else if (['brush', 'eraser'].includes(this.currentObject.tool)) {
+                            isSmallShape = this.currentObject.path.length < 2;
+                        }
+                        
+                        if (isSmallShape) {
+                            layer.objects.pop(); // Remove the tiny object
+                        }
+                    }
+
+                    this.currentObject = null;
+                    this.saveState();
+                    this.redraw();
+                }
+            }
+            
+            redraw() {
+                this.ctx.save();
+                this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.restore();
+                
+                // Apply the zoom/pan transformation to the drawing context
+                this.ctx.save();
+                this.ctx.translate(this.panX, this.panY);
+                this.ctx.scale(this.zoom, this.zoom);
+                
+                this.layers.forEach((layer) => {
+                    if (layer.isVisible) {
+                        layer.objects.forEach(obj => {
+                            this.drawObject(this.ctx, obj);
+                        });
+                    }
+                });
+                
+                this.selectedObjects.forEach(obj => {
+                    this.drawBoundingBox(this.ctx, obj);
+                });
+                
+                this.ctx.restore(); // Restore context to original (no zoom/pan)
+                
+                this.drawGrid();
+            }
+
+            drawObject(ctx, obj) {
+                const props = obj.properties;
+                ctx.save();
+                
+                ctx.strokeStyle = props.strokeColor;
+                ctx.fillStyle = props.fillColor;
+                ctx.lineWidth = props.strokeWidth;
+                ctx.globalAlpha = props.opacity;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                if (props.style === 'dashed') ctx.setLineDash([10, 5]);
+                else if (props.style === 'dotted') ctx.setLineDash([2, 5]);
+                else ctx.setLineDash([]);
+                
+                ctx.beginPath();
+                
+                switch (obj.tool) {
+                    case 'brush':
+                    case 'eraser':
+                        ctx.globalCompositeOperation = obj.tool === 'eraser' ? 'destination-out' : 'source-over';
+                        obj.path.forEach((p, i) => {
+                            if (i === 0) { ctx.moveTo(p.x, p.y); } else { ctx.lineTo(p.x, p.y); }
+                        });
+                        ctx.stroke();
+                        ctx.globalCompositeOperation = 'source-over';
+                        break;
+                    case 'line':
+                    case 'arrow':
+                        ctx.moveTo(obj.x1, obj.y1);
+                        ctx.lineTo(obj.x2, obj.y2);
+                        ctx.stroke();
+                        // Arrowhead logic is omitted for simplicity in this minimal version
+                        break;
+                    case 'rectangle':
+                    case 'polygon':
+                        ctx.rect(obj.x, obj.y, obj.w, obj.h);
+                        if (props.hasFill) ctx.fill();
+                        ctx.stroke();
+                        break;
+                    case 'circle':
+                        // Use bounding box info to find the center and radius
+                        const centerX = obj.x + obj.w / 2;
+                        const centerY = obj.y + obj.h / 2;
+                        const radius = obj.w / 2; 
+                        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                        if (props.hasFill) ctx.fill();
+                        ctx.stroke();
+                        break;
+                    case 'text':
+                        ctx.font = `bold ${obj.fontSize || 16}px sans-serif`;
+                        ctx.textBaseline = 'top';
+                        ctx.fillStyle = props.strokeColor;
+                        ctx.fillText(obj.text, obj.x, obj.y);
+                        break;
+                }
+                
+                ctx.restore();
+            }
+
+            drawBoundingBox(ctx, obj) {
+                // Ensure drawing is affected only by canvas zoom/pan, not the bounding box itself
+                ctx.save();
+                ctx.strokeStyle = '#5865f2';
+                ctx.lineWidth = 2 / this.zoom; // Adjust width based on zoom level
+                ctx.setLineDash([5 / this.zoom, 5 / this.zoom]);
+                
+                let x = obj.x;
+                let y = obj.y;
+                let w = obj.w;
+                let h = obj.h;
+                
+                if (obj.tool === 'line' || obj.tool === 'arrow') {
+                    // For line, use the min/max of the two endpoints to draw a bounding box
+                    x = Math.min(obj.x1, obj.x2);
+                    y = Math.min(obj.y1, obj.y2);
+                    w = Math.abs(obj.x1 - obj.x2);
+                    h = Math.abs(obj.y1 - obj.y2);
+                }
+                
+                ctx.strokeRect(x, y, w, h);
+                
+                ctx.restore();
+            }
+            
+            drawGrid() {
+                if (!this.showGrid) {
+                    this.gridCanvas.style.display = 'none';
+                    return;
+                }
+                this.gridCanvas.style.display = 'block';
+                
+                const ctx = this.gridCtx;
+                ctx.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
+                
+                const step = this.GRID_SIZE;
+                ctx.strokeStyle = '#3a3a3a';
+                ctx.lineWidth = 0.5;
+                
+                ctx.save();
+                ctx.translate(this.panX, this.panY);
+                ctx.scale(this.zoom, this.zoom);
+
+                ctx.beginPath();
+                
+                // Draw grid lines based on the large world canvas size
+                for (let x = 0; x <= this.ctx.canvas.width; x += step) {
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, this.ctx.canvas.height);
+                }
+                
+                for (let y = 0; y <= this.ctx.canvas.height; y += step) {
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(this.ctx.canvas.width, y);
+                }
+                
+                ctx.stroke();
+                ctx.restore();
+            }
+            
+            // --- View/Viewport Controls (Pan & Zoom) ---
+            
+            setZoom(newZoom) {
+                const oldZoom = this.zoom;
+                this.zoom = Math.min(5, Math.max(0.1, newZoom)); 
+
+                const container = document.querySelector('.canvas-container');
+                const centerX = container.clientWidth / 2;
+                const centerY = container.clientHeight / 2;
+
+                this.panX = centerX - ((centerX - this.panX) / oldZoom) * this.zoom;
+                this.panY = centerY - ((centerY - this.panY) / oldZoom) * this.zoom;
+                
+                this.applyCanvasTransform();
+                this.redraw();
+            }
+
+            zoomAtPoint(zoomFactor, clientX, clientY) {
+                const rect = this.canvas.getBoundingClientRect();
+                const oldZoom = this.zoom;
+                this.zoom = Math.min(5, Math.max(0.1, this.zoom * zoomFactor)); 
+
+                const xInWorld = (clientX - rect.left - this.panX) / oldZoom;
+                const yInWorld = (clientY - rect.top - this.panY) / oldZoom;
+
+                this.panX = clientX - rect.left - (xInWorld * this.zoom);
+                this.panY = clientY - rect.top - (yInWorld * this.zoom);
+
+                this.applyCanvasTransform();
+                this.redraw();
+            }
+
+            pan(clientX, clientY) {
+                const dx = clientX - this.lastPanX;
+                const dy = clientY - this.lastPanY;
+                
+                this.panX += dx;
+                this.panY += dy;
+                
+                this.applyCanvasTransform();
+                this.drawGrid();
+            }
+
+            toggleGrid() {
+                this.showGrid = !this.showGrid;
+                this.drawGrid();
+                document.getElementById('gridToggleBtn').classList.toggle('active', this.showGrid);
+            }
+
+            // --- Text and Object Helpers ---
+            
+            showTextInput(x, y) {
+                this.textInput.style.display = 'block';
+                
+                // Position text input in viewport space (client coordinates)
+                const viewportX = x * this.zoom + this.panX;
+                const viewportY = y * this.zoom + this.panY;
+
+                this.textInput.style.left = `${viewportX}px`;
+                this.textInput.style.top = `${viewportY}px`;
+                
+                this.textInput.value = '';
+                this.textInput.focus();
+                
+                this.currentTextObject = {
+                    tool: 'text',
+                    x: x, y: y,
+                    w: 0, h: 20,
+                    text: '',
+                    fontSize: 16,
+                    properties: this.getCurrentProperties(),
+                };
+            }
+
+            finishTextEdit() {
+                if (this.textInput.value.trim() !== '' && this.currentTextObject) {
+                    this.currentTextObject.text = this.textInput.value;
+                    
+                    // Update bounding box based on visible text input size
+                    this.currentTextObject.w = this.textInput.offsetWidth / this.zoom; 
+                    this.currentTextObject.h = this.textInput.offsetHeight / this.zoom;
+                    
+                    this.getCurrentLayer().objects.push(this.currentTextObject);
+                    this.saveState();
+                    this.redraw();
+                }
+                this.textInput.style.display = 'none';
+                this.currentTextObject = null;
+            }
+            
+            deleteSelected() {
+                if (this.selectedObjects.length === 0) return;
+                
+                this.layers.forEach(layer => {
+                    layer.objects = layer.objects.filter(obj => !this.selectedObjects.includes(obj));
+                });
+
+                this.selectedObjects = [];
+                this.saveState();
+                this.redraw();
+            }
+
+            getCurrentProperties() {
+                return {
+                    strokeColor: this.strokeColor,
+                    fillColor: this.fillColor,
+                    strokeWidth: this.strokeWidth,
+                    opacity: this.opacity,
+                    style: this.style,
+                    hasFill: this.hasFill,
+                };
+            }
+            
+            // --- File Operations (Placeholders) ---
+
+            saveToPNG() {
+                alert("Saving to PNG is not fully implemented yet, but the data is ready!");
+            }
+
+            saveToSVG() {
+                alert("Exporting to SVG is not fully implemented yet, but the data is ready!");
+            }
+        }
+
+        window.addEventListener('load', () => {
+            new DrawingApp();
+        });
+    </script>
+</body>
+</html>
